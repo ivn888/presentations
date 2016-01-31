@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="fr">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>tempus.md</title>
+
+        <meta name="author" content="Oslandia">
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <link rel="stylesheet" href="static/reveal.js/css/reveal.css">
+        <link rel="stylesheet" href="static/reveal.js/css/theme/moon.css" id="theme">
+
+        <!-- For syntax highlighting -->
+        <link rel="stylesheet" href="static/reveal.js/lib/css/zenburn.css">
+
+        <!-- Oslandia customizations -->
+        <link rel="stylesheet" href="static/oslandia.css">
+
+        <!-- Local customizations -->
+        <link rel="stylesheet" href="custom.css">
+
+        <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+        <script>
+            if( window.location.search.match( /print-pdf/gi ) ) {
+                var link = document.createElement( 'link' );
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = "static/reveal.js/css/print/pdf.css";
+                document.getElementsByTagName( 'head' )[0].appendChild( link );
+            }
+        </script>
+
+        <!--[if lt IE 9]>
+        <script src="lib/js/html5shiv.js"></script>
+        <![endif]-->
+    </head>
+
+    <body>
+
+        <div class="reveal" >
+        <div class="slides">
+            <section data-markdown data-separator="^\n---\n$" data-vertical="^\n--\n$">
+                <script type="text/template">
+                    # Tempus
+## A framework for multimodal trip planning
+
+<img src="tempus.png" style="width:200px">
+
+Hugo Mercier, *Oslandia*
+
+Geospatial devroom, FOSDEM 2016
+
+<!-- .slide: data-background="oslbackground.png" data-background-size="650px" -->
+
+
+Note:
+La fenêtre du speaker peut être ouverte avec la touche 's'
+Pour noircir la fenêtre, presser 'b'
+
+---
+
+## Context
+
+- A platform for multimodal trip planning
+- Collaboration with research labs IFSTTAR/CEREMA
+- Main objectives :
+  - Extensibility
+  - Performances
+- Use cases :
+  - New route planning algorithms. Tests and benchmarks
+  - Production-scale (multimodal) route planner
+- Young project :
+  - First open source release : may 2014
+- Industrial partnerships
+
+---
+
+## Architecture
+
+<img src="architecture.svg" width="85%" />
+
+---
+
+## Tempus core
+
+- Templated C++(11)
+- Uses boost::graph
+- Graph loaded from a PostGIS db
+- Stays in memory
+- Answers WPS requests
+- Multi-threaded
+
+---
+
+## Graph data model
+
+"Multimodal" graph :
+
+- One road graph
+- N public transport graphs
+- M points of interests (parkings, shared bike stations, shared cars, etc.)
+- linked on road edges
+
+---
+
+![](graph.svg)
+
+---
+
+## Multimodal adjacency
+
+- A "meta" graph on top of other graphs (road, PT)
+- Transparently seen as a Boost graph
+  - Node : node of the underlying graph
+  - Edge : **needs special adjacency rules**
+
+---
+
+<img src="adjacency2.svg" width="800px"/>
+
+---
+
+<img src="adjacency3.svg" width="800px"/>
+
+---
+
+<img src="adjacency4.svg" width="800px"/>
+
+---
+
+<img src="adjacency5.svg" width="800px"/>
+
+---
+
+<img src="adjacency6.svg" width="800px"/>
+
+---
+
+<img src="adjacency7.svg" width="800px"/>
+
+---
+
+## Plugins
+
+---
+
+## Plugins
+
+- Modular architecture with C++ plugins
+- Each declared plugin
+  - can be requested by the user
+  - may request a graph (shared, read-only)
+  - must produce roadmaps in response
+- Allows to easily experiment new features
+
+---
+
+## Plugins
+
+Multimodal routing (dynamic_multi_plugin) :
+
+- Dijkstra / A* <!-- .element: class="fragment" data-fragment-index="1" -->
+- Focus on multimodal  <!-- .element: class="fragment" data-fragment-index="2" -->
+  - Walking + PT + Shared bikes and cars  <!-- .element: class="fragment" data-fragment-index="3" -->
+  - Parkings  <!-- .element: class="fragment" data-fragment-index="4" -->
+- Turn restrictions  <!-- .element: class="fragment" data-fragment-index="5" -->
+- Speed profiles  <!-- .element: class="fragment" data-fragment-index="6" -->
+
+Note:
+In addition to basic sample plugins.
+
+---
+
+## Turn restrictions
+
+Takes into account possibly complex turn restrictions and penalties
+
+<img src="turns.jpg" width="500px"/>
+
+---
+
+## Speed profiles
+
+Average speed, depending on time and day, for a given transport mode and a given road edge.
+
+<img src="speed_profile.jpg" width="600px"/>
+
+---
+
+## Plugins (2)
+
+Road routing (ch_plugin) :
+
+- Contraction Hierarchies
+- New in 2.0
+- Adds shortcuts to the road graph
+- Preprocessing steps
+  - Node ordering
+  - Graph contraction
+
+<img src="mappy.png"/>
+
+---
+
+## Data loader
+
+---
+
+## Data loader
+
+- Imports data into a PostGIS database   <!-- .element: class="fragment" data-fragment-index="1" -->
+- Roads:   <!-- .element: class="fragment" data-fragment-index="2" -->
+  - OpenStreetMap
+  - Navteq
+  - Multinet
+  - Elevation data: SRTM, BDAlti (IGN)
+- Public transports:  <!-- .element: class="fragment" data-fragment-index="3" -->
+  - GTFS
+- POI:  <!-- .element: class="fragment" data-fragment-index="4" -->
+  - Shapefiles
+
+---
+
+## Clients
+
+- Python client on top of a WPS client
+  - Dedicated QGIS plugin
+  - unit tests
+  - batch scripts
+
+---
+
+## QGIS plugin
+
+Video
+
+https://vimeo.com/114875069
+
+---
+
+## Performances
+
+- Multimodal plugin
+- Itinerary accross mid-sized town (Nantes area)
+- Machine: Core i7
+- Algorithm: Dijkstra
+
+Modes | Time
+---|---
+Walk + private car | ~170ms
+Walk + private car + parking | ~320ms
+Walking + PT | ~150ms
+Walking + PT + shared bike | ~180ms
+
+Still room for optimizations in the multimodal case
+
+---
+
+## Performances
+
+- Road plugins
+- Machine: Core i7
+
+Area | Dijkstra | CH
+---|---|---
+ Nantes | ~5ms | < 1ms
+ Ile de France | ~190ms | ~5ms
+ France | ~5300ms | ~37ms
+
+---
+
+### Memory footprint
+
+- Before 2.0:
+  - "France" in memory ~ 20GB
+- 2.0:
+  - Data structure change (compressed sparse row graph)
+  - Serializable data structures
+  - Dump on disk to avoid fragmentation and speed up loading
+  - "France" in memory ~ 1GB
+
+---
+
+## Future
+
+- More algorithms
+  - "Raptor" / Connection-Scan for Public transports
+  - CH with turn restrictions
+  - Other hierarchical approaches
+  - Hard to adapt to the "dynamic" multimodal case
+
+---
+
+## Announcement
+
+Next OSGEO Code Sprint
+
+PostGIS, Mapserver, PointCloud, 3D, etc.
+
+Mozilla Foundation, Paris
+
+23rd - 26th of February
+
+https://wiki.osgeo.org/wiki/Paris_Code_Sprint_2016
+
+---
+
+https://github.com/ifsttar/tempus
+
+contact@oslandia.com
+
+
+
+                </script>
+            </section>
+        </div>
+        <script src="static/reveal.js/lib/js/head.min.js"></script>
+        <script src="static/reveal.js/js/reveal.js"></script>
+
+        <script>
+
+            // Full list of configuration options available here:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: false,
+                progress: true,
+                history: true,
+                center: true,
+                mouseWheel: false,
+                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                transition: 'linear', // default/cube/page/concave/zoom/linear/fade/none
+
+                // Optional libraries used to extend on reveal.js
+                dependencies: [
+                    { src: "static/reveal.js/lib/js/classList.js", condition: function() { return !document.body.classList; } },
+                    { src: "static/reveal.js/plugin/markdown/marked.js", condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: "static/reveal.js/plugin/markdown/markdown.js", condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: "static/reveal.js/plugin/highlight/highlight.js", async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: "static/reveal.js/plugin/zoom-js/zoom.js", async: true, condition: function() { return !!document.body.classList; } },
+                    { src: "static/reveal.js/plugin/notes/notes.js", async: true, condition: function() { return !!document.body.classList; } }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>
